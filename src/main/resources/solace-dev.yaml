@@ -1,0 +1,23 @@
+solace:
+    connectionFactoryJndiName: "/jms/cf/default"
+    jndiInitialContextFactory: "com.solacesystems.jndi.SolJNDIInitialContextFactory"
+    jndiProviderUrl: "tcps://mrf6mxyphvf8i.messaging.solace.cloud:55443"
+    vpn: "vv-dev-mule"
+    username: "solace username"
+    password: "solace password"
+    authenticationScheme: "AUTHENTICATION_SCHEME_BASIC"
+    trustStore: "DigiCert_Global_Root_CA.jks"
+    trustStoreFormat: "jks"
+    trustStorePassword: "solace"
+    destinationTopic: "vv-emp-topic"
+    destinationQueue: "vv-emp-queue"
+    errorDestinationTopic: "vv-emp-error-topic"
+    errorDestinationQueue: "vv-emp-error-queue"
+    maxRedeliveryCount: "3"
+
+db:
+  host: "localhost"
+  port: "3306"
+  user: "db_username"
+  password: "db_password"
+  database: "db_database"

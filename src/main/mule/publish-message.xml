@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:http="http://www.mulesoft.org/schema/mule/http"
+    xmlns:jms="http://www.mulesoft.org/schema/mule/jms" xmlns="http://www.mulesoft.org/schema/mule/core"
+    xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/jms http://www.mulesoft.org/schema/mule/jms/current/mule-jms.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+    <flow name="publish-message-flow" doc:id="864ac214-6167-48ed-bdbf-fc0e8aa6cedd">
+        <http:listener doc:name="POST:/Publish" doc:id="99bc97e1-a8f1-41ec-b5d0-d57dc5a9f7d6" config-ref="HTTP_Listener_config"
+            path="/publish"/>
+        <jms:publish doc:name="Publish Message to Emp Topic" doc:id="f1c3da76-ede3-40c1-b5f1-5ff3b006ce4f"
+            config-ref="Solace_JMS_Configuration" destination="${solace.destinationTopic}" destinationType="TOPIC" sendCorrelationId="ALWAYS"/>
+        <ee:transform doc:name="Set Success Message" doc:id="41c7466c-3a7a-4857-a8c4-d7d30e2b6e91">
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"message": "Message has been published",
+	"correlationId": correlationId
+}]]></ee:set-payload>
+            </ee:message>
+        </ee:transform>
+    </flow>
+</mule>

@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:db="http://www.mulesoft.org/schema/mule/db" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:jms="http://www.mulesoft.org/schema/mule/jms"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/jms http://www.mulesoft.org/schema/mule/jms/current/mule-jms.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd">
+    <flow name="subscribe-message-flow" doc:id="936f5ea8-cad3-408f-90dd-eadc205142fe" >
+        <jms:listener doc:name="On New Message" doc:id="037ca3c1-30d9-4324-9bf8-4800c89337f9" destination="${solace.destinationQueue}" ackMode="MANUAL" config-ref="Solace_JMS_Configuration">
+            <jms:consumer-type >
+                <jms:queue-consumer />
+            </jms:consumer-type>
+        </jms:listener>
+        <set-variable value="#[attributes.ackId]" doc:name="Set Ack Id" doc:id="b759fbfc-bbfb-461e-8afd-3171fe17e0da" variableName="ackId"/>
+        <set-variable value="#[payload]" doc:name="Store Original Request" doc:id="f29752aa-1aea-4f22-9e59-0a327b121085" variableName="originalRequest"/>
+        <ee:transform doc:name="Map Request" doc:id="011be702-bc35-4bb5-acfd-e2855ff90366" >
+            <ee:message >
+                <ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+            </ee:message>
+            <ee:variables >
+            </ee:variables>
+        </ee:transform>
+        <db:insert doc:name="Insert Employee Records" doc:id="9f477a20-c0fe-4665-bfc5-d6d3698f640f" config-ref="Database_Config">
+                <db:sql><![CDATA[INSERT INTO employees (Id, Name,Designation, Company) VALUES (:Id, :Name, :Designation, :Company)]]></db:sql>
+                <db:input-parameters><![CDATA[#[{
+	Id: payload.Id,
+	Name: payload.Name,
+	Designation: payload.Designation,
+	Company: payload.Company
+}]]]></db:input-parameters>
+            </db:insert>
+        <jms:ack doc:name="Send Ack" doc:id="e3f38c28-7d5a-49d5-afa8-d315ffcbc8d1" ackId="#[vars.ackId]" />
+        <error-handler >
+            <on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="b3453c4a-a1aa-49bd-a377-29dbf479e494" type="ANY">
+                <logger level="INFO" doc:name="Log Error Message" doc:id="efba0c58-21ad-4ce7-90ae-2788ab91e04f" message="#[error.payload]"/>
+                <jms:publish doc:name="Publish Failed Messages to Topic" doc:id="ba88fbfb-4bd0-467e-8529-b2dfdb6a1316" config-ref="Solace_JMS_Configuration" destination="${solace.errorDestinationTopic}" destinationType="TOPIC" sendCorrelationId="ALWAYS">
+                    <jms:message >
+                        <jms:body ><![CDATA[#[vars.originalRequest]]]></jms:body>
+                    </jms:message>
+                </jms:publish>
+            </on-error-propagate>
+        </error-handler>
+    </flow>
+</mule>
